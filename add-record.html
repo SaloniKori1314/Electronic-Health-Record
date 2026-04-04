@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Add Health Record</title>
+<link rel="stylesheet" href="style.css">
+<style>
+.page-wrap{max-width:640px;margin:0 auto;padding:32px;}
+.step-bar{display:flex;gap:0;margin-bottom:28px;}
+.step{
+flex:1;text-align:center;padding:10px;font-size:13px;
+border-bottom:3px solid var(--gray-200);color:var(--gray-400);
+transition:all .2s;
+}
+.step.active{border-bottom-color:var(--blue);color:var(--blue);font-weight:500;}
+.step.done{border-bottom-color:var(--green);color:var(--green);}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <span class="topbar-logo">HealthVault</span>
+  <div class="topbar-actions">
+    <button class="btn btn-sm btn-outline" onclick="window.location.href='dashboard.html'">← Dashboard</button>
+  </div>
+</div>
+
+<div class="page-wrap">
+  <div class="page-header">
+    <h2>Add Health Record</h2>
+    <p>Fill in the patient's medical information</p>
+  </div>
+
+  <div class="step-bar">
+    <div class="step active" id="s1">1. Basic Info</div>
+    <div class="step" id="s2">2. Medical Details</div>
+    <div class="step" id="s3">3. Medication</div>
+  </div>
+
+  <div class="card">
+
+    <!-- SECTION 1 -->
+    <div class="form-section">
+      <h3>Basic Information</h3>
+      <input class="input" id="name" placeholder="Patient Name">
+      <div class="input-row">
+        <input class="input" id="age" type="number" placeholder="Age">
+        <select class="input" id="gender">
+          <option value="">Gender</option>
+          <option>Male</option><option>Female</option><option>Other</option>
+        </select>
+      </div>
+      <div class="input-row">
+        <input class="input" id="date" type="date">
+        <input class="input" id="doctor" placeholder="Doctor Name">
+      </div>
+      <input class="input" id="hospital" placeholder="Hospital / Clinic">
+    </div>
+
+    <!-- SECTION 2 -->
+    <div class="form-section">
+      <h3>Medical Details</h3>
+      <textarea class="input" id="symptoms" placeholder="Symptoms (comma separated)"></textarea>
+      <textarea class="input" id="diagnosis" placeholder="Diagnosis"></textarea>
+      <textarea class="input" id="prescription" placeholder="Prescription"></textarea>
+      <textarea class="input" id="notes" placeholder="Notes / Remarks"></textarea>
+    </div>
+
+    <!-- SECTION 3 -->
+    <div class="form-section">
+      <h3>Medication</h3>
+      <input class="input" id="medicine" placeholder="Medicine Name">
+      <div class="input-row">
+        <input class="input" id="dosage" placeholder="Dosage (e.g. 500mg)">
+        <input class="input" id="duration" placeholder="Duration (e.g. 7 days)">
+      </div>
+    </div>
+
+    <!-- SECTION 4 -->
+    <div class="form-section">
+      <h3>Reports</h3>
+      <input class="input" type="file" accept=".pdf,.jpg,.png">
+      <p class="text-sm mt-2">Upload lab reports or scans (PDF / Image)</p>
+    </div>
+
+    <div style="display:flex;gap:10px;margin-top:8px;">
+      <button class="btn btn-outline" onclick="window.location.href='dashboard.html'">Cancel</button>
+      <button class="btn" onclick="saveRecord()">Save Record</button>
+    </div>
+
+  </div>
+</div>
+
+<script>
+// Pre-fill patient name if coming from doctor dashboard
+let preset = localStorage.getItem('selectedPatient');
+if(preset) document.getElementById('name').value = preset;
+
+// Highlight steps as user scrolls
+document.querySelectorAll('.input, textarea').forEach(el=>{
+  el.addEventListener('focus', ()=>{
+    let sec = el.closest('.form-section');
+    if(!sec) return;
+    let idx = [...document.querySelectorAll('.form-section')].indexOf(sec);
+    document.querySelectorAll('.step').forEach((s,i)=>{
+      s.className = 'step ' + (i<idx?'done':i===idx?'active':'');
+    });
+  });
+});
+
+function saveRecord(){
+  let name = document.getElementById('name').value.trim();
+  if(!name){ alert('Please enter patient name'); return; }
+  let record = {
+    name,
+    age: document.getElementById('age').value,
+    gender: document.getElementById('gender').value,
+    date: document.getElementById('date').value,
+    doctor: document.getElementById('doctor').value,
+    hospital: document.getElementById('hospital').value,
+    symptoms: document.getElementById('symptoms').value,
+    diagnosis: document.getElementById('diagnosis').value,
+    prescription: document.getElementById('prescription').value,
+    notes: document.getElementById('notes').value,
+    medicine: document.getElementById('medicine').value,
+    dosage: document.getElementById('dosage').value,
+    duration: document.getElementById('duration').value
+  };
+  fetch('http://localhost:3000/add',{
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify(record)
+  })
+  .then(r=>r.json())
+  .then(()=>{
+    alert('Health record saved successfully ✓');
+    window.location.href='dashboard.html';
+  })
+  .catch(()=>alert('Server not reachable. Please ensure server is running.'));
+}
+</script>
+</body>
+</html>

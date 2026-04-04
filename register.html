@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>HealthVault – Create Account</title>
+<link rel="stylesheet" href="style.css">
+<style>
+.field { position: relative; margin: 6px 0; }
+.field .input { margin: 0; }
+
+/* validation states */
+.input.valid   { border-color: var(--green); }
+.input.invalid { border-color: var(--red); }
+
+.field-msg {
+  font-size: 12px;
+  margin: 3px 0 0 2px;
+  min-height: 16px;
+  display: block;
+}
+.field-msg.err  { color: var(--red); }
+.field-msg.ok   { color: var(--green); }
+
+/* password strength bar */
+.strength-bar {
+  height: 4px;
+  border-radius: 2px;
+  background: var(--gray-200);
+  margin: 4px 0;
+  overflow: hidden;
+}
+.strength-fill {
+  height: 100%;
+  border-radius: 2px;
+  width: 0%;
+  transition: width .3s, background .3s;
+}
+
+/* server error banner */
+.server-error {
+  background: var(--red-light);
+  border: 1px solid #fca5a5;
+  color: #b91c1c;
+  border-radius: var(--radius-sm);
+  padding: 10px 14px;
+  font-size: 14px;
+  margin-bottom: 12px;
+  display: none;
+}
+
+.section-label {
+  font-size: 12px;font-weight:600;text-transform:uppercase;
+  letter-spacing:.05em;color:var(--gray-400);margin:14px 0 6px;
+}
+
+.type-group { display:flex;gap:10px;margin:6px 0 12px; }
+.type-btn {
+  flex:1;padding:10px 6px;border:1.5px solid var(--gray-200);
+  border-radius:var(--radius-sm);cursor:pointer;
+  background:#fff;font-size:13px;font-family:inherit;text-align:center;
+  transition:all .2s;
+}
+.type-btn.selected { border-color:var(--blue);background:var(--blue-light);color:var(--blue);font-weight:500; }
+
+.btn:disabled { opacity:.5; cursor:not-allowed; }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <!-- LEFT -->
+  <div class="left">
+    <h1>HealthVault</h1>
+    <p>Create your digital health profile</p>
+    <div class="features">
+      <div><span class="feat-icon">👨‍👩‍👧</span> Manage family records</div>
+      <div><span class="feat-icon">📊</span> Track health history</div>
+      <div><span class="feat-icon">🚑</span> Emergency ready profile</div>
+    </div>
+  </div>
+
+  <!-- RIGHT -->
+  <div class="right">
+    <div class="form-box">
+      <div class="form-title">Create Account</div>
+      <div class="form-sub">All fields marked * are required</div>
+
+      <!-- server error -->
+      <div class="server-error" id="serverError"></div>
+
+      <!-- Full Name -->
+      <div class="field">
+        <input class="input" id="fullname" type="text" placeholder="Full Name *"
+               oninput="validateName()" onblur="validateName(true)">
+        <span class="field-msg" id="nameMsg"></span>
+      </div>
+
+      <!-- Age -->
+      <div class="field">
+        <input class="input" id="age" type="number" placeholder="Age *" min="1" max="120"
+               oninput="validateAge()" onblur="validateAge(true)">
+        <span class="field-msg" id="ageMsg"></span>
+      </div>
+
+      <!-- Email -->
+      <div class="field">
+        <input class="input" id="email" type="email" placeholder="Email Address *"
+               oninput="validateEmail()" onblur="validateEmail(true)">
+        <span class="field-msg" id="emailMsg"></span>
+      </div>
+
+      <!-- Password -->
+      <div class="field">
+        <input class="input" id="password" type="password" placeholder="Password * (min 6 characters)"
+               oninput="validatePassword()" onblur="validatePassword(true)">
+        <div class="strength-bar"><div class="strength-fill" id="strengthFill"></div></div>
+        <span class="field-msg" id="passMsg"></span>
+      </div>
+
+      <!-- Confirm Password -->
+      <div class="field">
+        <input class="input" id="confirm" type="password" placeholder="Confirm Password *"
+               oninput="validateConfirm()" onblur="validateConfirm(true)">
+        <span class="field-msg" id="confirmMsg"></span>
+      </div>
+
+      <!-- Role -->
+      <div class="section-label">Account Type *</div>
+      <div class="type-group">
+        <button class="type-btn selected" onclick="selectRole(this,'patient')">🧑 Patient</button>
+        <button class="type-btn" onclick="selectRole(this,'doctor')">👨‍⚕️ Doctor</button>
+      </div>
+
+      <!-- Optional fields -->
+      <div class="section-label">Health Info (optional)</div>
+      <input class="input" id="condition" type="text" placeholder="Existing conditions">
+      <input class="input" id="allergies" type="text" placeholder="Allergies">
+
+      <div class="section-label">Emergency Contact (optional)</div>
+      <input class="input" id="emergency" type="tel" placeholder="Emergency phone number">
+
+      <button class="btn" id="submitBtn" onclick="register()" style="margin-top:14px;">
+        Create Account
+      </button>
+
+      <div class="link">Already have an account? <a href="login.html">Sign In</a></div>
+    </div>
+  </div>
+
+</div>
+<script>
+const API = 'http://localhost:3000';
+let selectedRole = 'patient';
+
+// ── ROLE SELECTION ──
+function selectRole(el, role) {
+  selectedRole = role;
+  document.querySelectorAll('.type-btn').forEach(b => b.classList.remove('selected'));
+  el.classList.add('selected');
+}
+
+// ── VALIDATION HELPERS ──
+function setField(inputId, msgId, isValid, message) {
+  const inp = document.getElementById(inputId);
+  const msg = document.getElementById(msgId);
+  inp.classList.toggle('valid',   isValid === true);
+  inp.classList.toggle('invalid', isValid === false);
+  msg.textContent  = message;
+  msg.className    = 'field-msg ' + (isValid === true ? 'ok' : isValid === false ? 'err' : '');
+}
+
+function validateName(blur) {
+  const v = document.getElementById('fullname').value.trim();
+  if (!v && !blur) return;
+  if (!v)              return setField('fullname','nameMsg', false, 'Full name is required.');
+  if (v.length < 2)    return setField('fullname','nameMsg', false, 'Name must be at least 2 characters.');
+  if (!/^[a-zA-Z\s]+$/.test(v)) return setField('fullname','nameMsg', false, 'Name can only contain letters.');
+  setField('fullname','nameMsg', true, '✓ Looks good');
+}
+
+function validateAge(blur) {
+  const v = document.getElementById('age').value;
+  if (!v && !blur) return;
+  if (!v)           return setField('age','ageMsg', false, 'Age is required.');
+  if (v < 1 || v > 120) return setField('age','ageMsg', false, 'Please enter a valid age (1–120).');
+  setField('age','ageMsg', true, '✓ Valid');
+}
+
+function validateEmail(blur) {
+  const v = document.getElementById('email').value.trim();
+  if (!v && !blur) return;
+  if (!v)          return setField('email','emailMsg', false, 'Email is required.');
+  const ok = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);
+  if (!ok)         return setField('email','emailMsg', false, 'Enter a valid email (e.g. name@example.com).');
+  setField('email','emailMsg', true, '✓ Valid email');
+}
+
+function validatePassword(blur) {
+  const v = document.getElementById('password').value;
+  if (!v && !blur) return;
+
+  // Strength
+  let strength = 0;
+  if (v.length >= 6)              strength++;
+  if (v.length >= 10)             strength++;
+  if (/[A-Z]/.test(v))           strength++;
+  if (/[0-9]/.test(v))           strength++;
+  if (/[^a-zA-Z0-9]/.test(v))    strength++;
+
+  const fill   = document.getElementById('strengthFill');
+  const colors = ['#ef4444','#f97316','#eab308','#22c55e','#16a34a'];
+  const labels = ['Too short','Weak','Fair','Good','Strong'];
+  fill.style.width      = (strength * 20) + '%';
+  fill.style.background = colors[Math.max(0, strength - 1)] || '#ef4444';
+
+  if (!v)           return setField('password','passMsg', false, 'Password is required.');
+  if (v.length < 6) return setField('password','passMsg', false, 'Password must be at least 6 characters.');
+  setField('password','passMsg', true, 'Strength: ' + (labels[strength - 1] || 'Too short'));
+
+  // re-validate confirm if already typed
+  if (document.getElementById('confirm').value) validateConfirm();
+}
+
+function validateConfirm(blur) {
+  const pass = document.getElementById('password').value;
+  const conf = document.getElementById('confirm').value;
+  if (!conf && !blur) return;
+  if (!conf)          return setField('confirm','confirmMsg', false, 'Please confirm your password.');
+  if (conf !== pass)  return setField('confirm','confirmMsg', false, 'Passwords do not match.');
+  setField('confirm','confirmMsg', true, '✓ Passwords match');
+}
+
+// ── SUBMIT ──
+async function register() {
+  // Force-validate all required fields
+  validateName(true);
+  validateAge(true);
+  validateEmail(true);
+  validatePassword(true);
+  validateConfirm(true);
+
+  // Check all green before sending
+  const ids = ['fullname','age','email','password','confirm'];
+  const allValid = ids.every(id => document.getElementById(id).classList.contains('valid'));
+  if (!allValid) return;
+
+  const btn = document.getElementById('submitBtn');
+  btn.disabled = true;
+  btn.textContent = 'Creating account…';
+  document.getElementById('serverError').style.display = 'none';
+
+  const body = {
+    fullname:  document.getElementById('fullname').value.trim(),
+    email:     document.getElementById('email').value.trim(),
+    password:  document.getElementById('password').value,
+    age:       document.getElementById('age').value,
+    role:      selectedRole,
+    condition: document.getElementById('condition').value,
+    allergies: document.getElementById('allergies').value,
+    emergency: document.getElementById('emergency').value
+  };
+
+  try {
+    const res  = await fetch(API + '/register', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body)
+    });
+    const data = await res.json();
+
+    if (!res.ok) {
+      // Show server error (e.g. email already exists)
+      const box = document.getElementById('serverError');
+      box.textContent = data.error;
+      box.style.display = 'block';
+      btn.disabled = false;
+      btn.textContent = 'Create Account';
+      // Highlight email field if duplicate
+      if (data.error.toLowerCase().includes('email'))
+        setField('email','emailMsg', false, data.error);
+      return;
+    }
+
+    alert('Account created successfully! Please log in.');
+    window.location.href = 'login.html';
+
+  } catch {
+    const box = document.getElementById('serverError');
+    box.textContent = '⚠ Could not connect to server. Make sure it is running (node server.js).';
+    box.style.display = 'block';
+    btn.disabled = false;
+    btn.textContent = 'Create Account';
+  }
+}
+</script>
+</body>
+</html>

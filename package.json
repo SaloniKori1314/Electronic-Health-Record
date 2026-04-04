@@ -1,0 +1,17 @@
+{
+  "name": "healthvault-ehr",
+  "version": "2.0.0",
+  "description": "Electronic Health Record System with SQLite database",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "cors": "^2.8.6",
+    "express": "^4.18.2",
+    "sqlite3": "^5.1.7"
+  }
+}

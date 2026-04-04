@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>HealthVault – Dashboard</title>
+<link rel="stylesheet" href="style.css">
+<style>
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-top:20px;}
+.cal-nav{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;}
+.cal-nav span{font-weight:500;font-size:15px;}
+.cal-nav button{background:none;border:1px solid var(--gray-200);border-radius:6px;padding:4px 10px;cursor:pointer;font-size:16px;}
+.cal-nav button:hover{background:var(--gray-100);}
+.appt-item{display:flex;gap:12px;align-items:flex-start;padding:10px 0;border-bottom:1px solid var(--gray-100);}
+.appt-item:last-child{border-bottom:none;}
+.appt-dot{width:10px;height:10px;border-radius:50%;background:var(--blue);margin-top:5px;flex-shrink:0;}
+.appt-title{font-size:14px;font-weight:500;}
+.appt-time{font-size:12px;color:var(--gray-400);}
+.appt-del{background:none;border:none;color:var(--gray-300);cursor:pointer;font-size:18px;margin-left:auto;line-height:1;}
+.appt-del:hover{color:var(--red);}
+.quick-link{display:flex;align-items:center;gap:10px;padding:12px 14px;border-radius:var(--radius-sm);border:1px solid var(--gray-200);background:#fff;cursor:pointer;transition:all .2s;font-size:14px;font-weight:500;text-decoration:none;color:var(--gray-800);}
+.quick-link:hover{border-color:var(--blue-mid);background:var(--blue-light);color:var(--blue);text-decoration:none;}
+.quick-icon{font-size:20px;}
+.quick-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:16px;}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <span class="topbar-logo">HealthVault</span>
+  <div class="topbar-actions">
+    <span class="topbar-user" id="userName"></span>
+    <button class="btn btn-sm" onclick="window.location.href='add-record.html'">+ Add Record</button>
+    <button class="btn btn-sm btn-outline" onclick="window.location.href='view-record.html'">View Records</button>
+    <button class="btn btn-sm btn-outline" onclick="openFeedback()">Feedback</button>
+    <button class="btn btn-sm btn-outline" onclick="logout()">Logout</button>
+  </div>
+</div>
+
+<div class="page">
+  <div class="page-header">
+    <h2 id="greeting">Health Overview</h2>
+    <p>Your personal health dashboard</p>
+  </div>
+
+  <div class="stat-grid">
+    <div class="stat-card blue">
+      <div class="stat-label">Total Records</div>
+      <div class="stat-value" id="recordCount">—</div>
+      <div class="stat-sub">Stored in database</div>
+    </div>
+    <div class="stat-card green">
+      <div class="stat-label">Active Medicines</div>
+      <div class="stat-value" id="medicineCount">—</div>
+      <div class="stat-sub">Current prescriptions</div>
+    </div>
+    <div class="stat-card amber">
+      <div class="stat-label">Health Status</div>
+      <div class="stat-value" id="healthStatus" style="font-size:20px;padding-top:6px;">—</div>
+      <div class="stat-sub">Auto calculated</div>
+    </div>
+  </div>
+
+  <div class="grid-2">
+    <div class="card">
+      <div style="font-weight:500;font-size:16px;margin-bottom:16px;">📅 Appointment Calendar</div>
+      <div class="cal-nav">
+        <button onclick="changeMonth(-1)">‹</button>
+        <span id="calTitle"></span>
+        <button onclick="changeMonth(1)">›</button>
+      </div>
+      <div class="cal-grid" id="calDays">
+        <div class="cal-header-day">Su</div>
+        <div class="cal-header-day">Mo</div>
+        <div class="cal-header-day">Tu</div>
+        <div class="cal-header-day">We</div>
+        <div class="cal-header-day">Th</div>
+        <div class="cal-header-day">Fr</div>
+        <div class="cal-header-day">Sa</div>
+      </div>
+      <div class="divider"></div>
+      <div style="font-size:13px;font-weight:600;color:var(--gray-400);text-transform:uppercase;letter-spacing:.05em;margin-bottom:10px;">Upcoming</div>
+      <div id="apptList"><p style="font-size:13px;color:var(--gray-400);">Loading...</p></div>
+      <button class="btn btn-sm btn-outline" onclick="addAppt()" style="margin-top:10px;width:100%;">+ Add Appointment</button>
+    </div>
+
+    <div>
+      <div class="card" style="margin-bottom:16px;">
+        <div style="font-weight:500;font-size:16px;margin-bottom:4px;">Quick Actions</div>
+        <div class="quick-grid">
+          <a class="quick-link" href="add-record.html"><span class="quick-icon">📝</span> Add Record</a>
+          <a class="quick-link" href="view-record.html"><span class="quick-icon">📂</span> My Records</a>
+          <a class="quick-link" href="#" onclick="openFeedback()"><span class="quick-icon">⭐</span> Feedback</a>
+          <a class="quick-link" href="doctor-dashboard.html"><span class="quick-icon">👨‍⚕️</span> Doctor View</a>
+        </div>
+      </div>
+      <div class="card">
+        <div style="font-weight:500;font-size:16px;margin-bottom:14px;">Recent Records</div>
+        <div id="recentRecords"><p style="font-size:14px;color:var(--gray-400);">Loading...</p></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- FEEDBACK MODAL -->
+<div class="modal-bg" id="feedbackModal">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">Share Your Feedback</div>
+      <button class="modal-close" onclick="closeFeedback()">×</button>
+    </div>
+    <p style="font-size:14px;color:var(--gray-500);margin-bottom:16px;">How was your experience with HealthVault?</p>
+    <div class="star-row" id="stars">
+      <span class="star" onclick="rateStar(1)">★</span>
+      <span class="star" onclick="rateStar(2)">★</span>
+      <span class="star" onclick="rateStar(3)">★</span>
+      <span class="star" onclick="rateStar(4)">★</span>
+      <span class="star" onclick="rateStar(5)">★</span>
+    </div>
+    <p id="ratingLabel" style="font-size:13px;color:var(--blue);min-height:18px;margin-bottom:10px;"></p>
+    <select class="input" id="feedbackCategory">
+      <option value="">Category (optional)</option>
+      <option>Usability</option>
+      <option>Records Management</option>
+      <option>Doctor Features</option>
+      <option>General</option>
+    </select>
+    <textarea class="input" id="feedbackText" placeholder="Tell us more about your experience..."></textarea>
+    <div style="display:flex;gap:10px;margin-top:14px;">
+      <button class="btn btn-outline" onclick="closeFeedback()" style="flex:1;">Cancel</button>
+      <button class="btn" onclick="submitFeedback()" style="flex:1;">Submit Feedback</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const API = 'http://localhost:3000';
+let role = localStorage.getItem('role') || 'patient';
+let name = localStorage.getItem('loggedPatient') || 'User';
+document.getElementById('userName').textContent = name + ' (' + role + ')';
+document.getElementById('greeting').textContent = 'Good day, ' + name + ' 👋';
+
+fetch(API + '/records')
+  .then(r=>r.json())
+  .then(data=>{
+    let mine = role==='patient' ? data.filter(r=>r.name===name) : data;
+    document.getElementById('recordCount').textContent = mine.length;
+    document.getElementById('medicineCount').textContent = mine.filter(r=>r.medicine&&r.medicine.trim()).length;
+    let s = mine.length===0?'No Data':mine.length<3?'Good ✓':'Needs Attention';
+    document.getElementById('healthStatus').textContent = s;
+    let recent = mine.slice(0,3);
+    document.getElementById('recentRecords').innerHTML = recent.length===0
+      ? '<p style="font-size:14px;color:var(--gray-400);">No records yet.</p>'
+      : recent.map(r=>`<div style="padding:10px 0;border-bottom:1px solid var(--gray-100);">
+          <div style="font-size:14px;font-weight:500;">${r.diagnosis||'Health Record'}</div>
+          <div style="font-size:12px;color:var(--gray-400);">${r.date||''} · Dr. ${r.doctor||'—'}</div>
+        </div>`).join('');
+  })
+  .catch(()=>{
+    ['recordCount','medicineCount'].forEach(id=>document.getElementById(id).textContent='—');
+    document.getElementById('healthStatus').textContent='Offline';
+    document.getElementById('recentRecords').innerHTML='<p style="font-size:13px;color:var(--red);">⚠ Server offline. Run: node server.js</p>';
+  });
+
+// ── CALENDAR ──
+let now=new Date(), calYear=now.getFullYear(), calMonth=now.getMonth();
+let appointments=[];
+const MONTHS=['January','February','March','April','May','June','July','August','September','October','November','December'];
+
+function loadAppointments(){
+  let url = API+'/appointments'+(role==='patient'?'?patient='+encodeURIComponent(name):'');
+  fetch(url)
+    .then(r=>r.json())
+    .then(data=>{appointments=data;renderCal();})
+    .catch(()=>{appointments=[];renderCal();});
+}
+
+function renderCal(){
+  document.getElementById('calTitle').textContent=MONTHS[calMonth]+' '+calYear;
+  let grid=document.getElementById('calDays');
+  while(grid.children.length>7) grid.removeChild(grid.lastChild);
+  let first=new Date(calYear,calMonth,1).getDay();
+  let days=new Date(calYear,calMonth+1,0).getDate();
+  let today=new Date();
+  for(let i=0;i<first;i++){grid.appendChild(document.createElement('div'));}
+  for(let d=1;d<=days;d++){
+    let b=document.createElement('div'); b.className='cal-day'; b.textContent=d;
+    let key=calYear+'-'+String(calMonth+1).padStart(2,'0')+'-'+String(d).padStart(2,'0');
+    if(appointments.find(a=>a.date===key)) b.classList.add('has-event');
+    if(d===today.getDate()&&calMonth===today.getMonth()&&calYear===today.getFullYear()) b.classList.add('today');
+    b.onclick=()=>showDayAppts(key);
+    grid.appendChild(b);
+  }
+  renderAppts();
+}
+
+function renderAppts(){
+  let today=new Date().toISOString().split('T')[0];
+  let upcoming=appointments.filter(a=>a.date>=today).slice(0,4);
+  document.getElementById('apptList').innerHTML=upcoming.length===0
+    ? '<p style="font-size:13px;color:var(--gray-400);">No upcoming appointments.</p>'
+    : upcoming.map(a=>`<div class="appt-item">
+        <div class="appt-dot"></div>
+        <div style="flex:1;"><div class="appt-title">${a.title}</div><div class="appt-time">${a.date}${a.time?' · '+a.time:''}</div></div>
+        <button class="appt-del" onclick="deleteAppt(${a.id},event)">×</button>
+      </div>`).join('');
+}
+
+function showDayAppts(key){
+  let list=appointments.filter(a=>a.date===key);
+  alert(list.length===0?'No appointments on '+key:'Appointments on '+key+':\n\n'+list.map(a=>'• '+a.title+(a.time?' at '+a.time:'')).join('\n'));
+}
+function changeMonth(d){calMonth+=d;if(calMonth>11){calMonth=0;calYear++;}if(calMonth<0){calMonth=11;calYear--;}renderCal();}
+
+function addAppt(){
+  let title=prompt('Appointment title:'); if(!title) return;
+  let date=prompt('Date (YYYY-MM-DD):'); if(!date) return;
+  let time=prompt('Time (e.g. 10:30 AM):')||'';
+  fetch(API+'/appointments',{
+    method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({patient:name,title,date,time})
+  }).then(()=>loadAppointments()).catch(()=>alert('Could not save. Is the server running?'));
+}
+
+function deleteAppt(id,e){
+  e.stopPropagation();
+  if(!confirm('Delete this appointment?')) return;
+  fetch(API+'/appointments/'+id,{method:'DELETE'}).then(()=>loadAppointments());
+}
+
+loadAppointments();
+
+// ── FEEDBACK ──
+let rating=0;
+const labels=['','Poor','Fair','Good','Very Good','Excellent'];
+function openFeedback(){document.getElementById('feedbackModal').classList.add('open');}
+function closeFeedback(){document.getElementById('feedbackModal').classList.remove('open');rating=0;document.querySelectorAll('.star').forEach(s=>s.classList.remove('active'));document.getElementById('ratingLabel').textContent='';}
+function rateStar(n){rating=n;document.querySelectorAll('.star').forEach((s,i)=>s.classList.toggle('active',i<n));document.getElementById('ratingLabel').textContent=labels[n]+' – '+n+'/5';}
+function submitFeedback(){
+  if(!rating){alert('Please select a star rating.');return;}
+  fetch(API+'/feedback',{
+    method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({rating,category:document.getElementById('feedbackCategory').value,message:document.getElementById('feedbackText').value})
+  }).then(()=>{closeFeedback();alert('Thank you for your feedback! '+'⭐'.repeat(rating));})
+  .catch(()=>alert('Could not save feedback.'));
+}
+
+function logout(){localStorage.clear();window.location.href='index.html';}
+</script>
+</body>
+</html>
