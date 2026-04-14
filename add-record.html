@@ -2,49 +2,49 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Add Health Record</title>
+<title>Add Health Record – HealthVault</title>
 <link rel="stylesheet" href="style.css">
 <style>
-.page-wrap{max-width:640px;margin:0 auto;padding:32px;}
-.step-bar{display:flex;gap:0;margin-bottom:28px;}
-.step{
-flex:1;text-align:center;padding:10px;font-size:13px;
-border-bottom:3px solid var(--gray-200);color:var(--gray-400);
-transition:all .2s;
-}
-.step.active{border-bottom-color:var(--blue);color:var(--blue);font-weight:500;}
-.step.done{border-bottom-color:var(--green);color:var(--green);}
+.page-wrap{max-width:680px;margin:0 auto;padding:32px;}
+.required{color:var(--red);margin-left:2px;}
 </style>
 </head>
 <body>
 
 <div class="topbar">
-  <span class="topbar-logo">HealthVault</span>
+  <div class="topbar-logo">
+    <div class="topbar-logo-icon">💊</div>
+    HealthVault
+  </div>
   <div class="topbar-actions">
     <button class="btn btn-sm btn-outline" onclick="window.location.href='dashboard.html'">← Dashboard</button>
   </div>
 </div>
 
-<div class="page-wrap">
+<div class="page-wrap fade-in">
   <div class="page-header">
     <h2>Add Health Record</h2>
-    <p>Fill in the patient's medical information</p>
+    <p>Fill in the patient's medical information accurately</p>
   </div>
 
   <div class="step-bar">
     <div class="step active" id="s1">1. Basic Info</div>
     <div class="step" id="s2">2. Medical Details</div>
     <div class="step" id="s3">3. Medication</div>
+    <div class="step" id="s4">4. Reports</div>
   </div>
 
   <div class="card">
 
-    <!-- SECTION 1 -->
+    <!-- SECTION 1: Basic Info -->
     <div class="form-section">
       <h3>Basic Information</h3>
-      <input class="input" id="name" placeholder="Patient Name">
+      <div class="field">
+        <input class="input" id="name" placeholder="Patient Name *" oninput="validateRequired('name','nameMsg','Patient name')" onblur="validateRequired('name','nameMsg','Patient name',true)">
+        <span class="field-msg" id="nameMsg"></span>
+      </div>
       <div class="input-row">
-        <input class="input" id="age" type="number" placeholder="Age">
+        <input class="input" id="age" type="number" placeholder="Age" min="0" max="120">
         <select class="input" id="gender">
           <option value="">Gender</option>
           <option>Male</option><option>Female</option><option>Other</option>
@@ -54,38 +54,46 @@ transition:all .2s;
         <input class="input" id="date" type="date">
         <input class="input" id="doctor" placeholder="Doctor Name">
       </div>
-      <input class="input" id="hospital" placeholder="Hospital / Clinic">
+      <input class="input" id="hospital" placeholder="Hospital / Clinic Name">
     </div>
 
-    <!-- SECTION 2 -->
+    <!-- SECTION 2: Medical Details -->
     <div class="form-section">
       <h3>Medical Details</h3>
-      <textarea class="input" id="symptoms" placeholder="Symptoms (comma separated)"></textarea>
-      <textarea class="input" id="diagnosis" placeholder="Diagnosis"></textarea>
-      <textarea class="input" id="prescription" placeholder="Prescription"></textarea>
-      <textarea class="input" id="notes" placeholder="Notes / Remarks"></textarea>
+      <textarea class="input" id="symptoms" placeholder="Symptoms (e.g. Fever, Cough, Fatigue)" style="min-height:70px;"></textarea>
+      <div class="field">
+        <textarea class="input" id="diagnosis" placeholder="Diagnosis *" style="min-height:70px;"
+                  oninput="validateRequired('diagnosis','diagMsg','Diagnosis')" onblur="validateRequired('diagnosis','diagMsg','Diagnosis',true)"></textarea>
+        <span class="field-msg" id="diagMsg"></span>
+      </div>
+      <textarea class="input" id="prescription" placeholder="Prescription details" style="min-height:70px;"></textarea>
+      <textarea class="input" id="notes" placeholder="Notes / Additional remarks"></textarea>
     </div>
 
-    <!-- SECTION 3 -->
+    <!-- SECTION 3: Medication -->
     <div class="form-section">
       <h3>Medication</h3>
-      <input class="input" id="medicine" placeholder="Medicine Name">
+      <input class="input" id="medicine" placeholder="Medicine Name (e.g. Paracetamol 500mg)">
       <div class="input-row">
-        <input class="input" id="dosage" placeholder="Dosage (e.g. 500mg)">
+        <input class="input" id="dosage" placeholder="Dosage (e.g. 500mg twice daily)">
         <input class="input" id="duration" placeholder="Duration (e.g. 7 days)">
       </div>
     </div>
 
-    <!-- SECTION 4 -->
+    <!-- SECTION 4: Reports -->
     <div class="form-section">
       <h3>Reports</h3>
-      <input class="input" type="file" accept=".pdf,.jpg,.png">
-      <p class="text-sm mt-2">Upload lab reports or scans (PDF / Image)</p>
+      <input class="input" type="file" accept=".pdf,.jpg,.png" id="reportFile" onchange="handleFile(this)">
+      <p class="text-sm mt-2">Upload lab reports or scans (PDF / Image). Max 10MB.</p>
+      <div id="filePreview" style="display:none;margin-top:10px;padding:10px;background:var(--green-light);border-radius:var(--radius-sm);font-size:13px;color:var(--green);">
+        ✅ <span id="fileName"></span>
+      </div>
     </div>
 
+    <!-- ACTIONS -->
     <div style="display:flex;gap:10px;margin-top:8px;">
-      <button class="btn btn-outline" onclick="window.location.href='dashboard.html'">Cancel</button>
-      <button class="btn" onclick="saveRecord()">Save Record</button>
+      <button class="btn btn-outline" onclick="window.location.href='dashboard.html'" style="flex:1;">Cancel</button>
+      <button class="btn" onclick="saveRecord()" style="flex:2;" id="saveBtn">Save Health Record</button>
     </div>
 
   </div>
@@ -93,26 +101,61 @@ transition:all .2s;
 
 <script>
 // Pre-fill patient name if coming from doctor dashboard
-let preset = localStorage.getItem('selectedPatient');
-if(preset) document.getElementById('name').value = preset;
+const preset = localStorage.getItem('selectedPatient');
+if (preset) document.getElementById('name').value = preset;
 
-// Highlight steps as user scrolls
-document.querySelectorAll('.input, textarea').forEach(el=>{
-  el.addEventListener('focus', ()=>{
-    let sec = el.closest('.form-section');
-    if(!sec) return;
-    let idx = [...document.querySelectorAll('.form-section')].indexOf(sec);
-    document.querySelectorAll('.step').forEach((s,i)=>{
-      s.className = 'step ' + (i<idx?'done':i===idx?'active':'');
+// Set today's date as default
+document.getElementById('date').value = new Date().toISOString().split('T')[0];
+
+function validateRequired(inputId, msgId, label, blur) {
+  const inp = document.getElementById(inputId);
+  const msg = document.getElementById(msgId);
+  const v = inp.value.trim();
+  if (!v && !blur) return false;
+  if (!v) {
+    inp.classList.add('invalid'); inp.classList.remove('valid');
+    msg.textContent = label + ' is required.'; msg.className = 'field-msg err';
+    return false;
+  }
+  inp.classList.add('valid'); inp.classList.remove('invalid');
+  msg.textContent = '✓ ' + label + ' entered'; msg.className = 'field-msg ok';
+  return true;
+}
+
+function handleFile(input) {
+  const file = input.files[0];
+  if (file) {
+    document.getElementById('filePreview').style.display = 'block';
+    document.getElementById('fileName').textContent = file.name + ' (' + (file.size / 1024).toFixed(1) + ' KB)';
+  }
+}
+
+// Highlight step based on focus
+const sections = document.querySelectorAll('.form-section');
+document.querySelectorAll('.input, textarea').forEach(el => {
+  el.addEventListener('focus', () => {
+    const sec = el.closest('.form-section');
+    if (!sec) return;
+    const idx = [...sections].indexOf(sec);
+    document.querySelectorAll('.step').forEach((s, i) => {
+      s.className = 'step ' + (i < idx ? 'done' : i === idx ? 'active' : '');
     });
   });
 });
 
-function saveRecord(){
-  let name = document.getElementById('name').value.trim();
-  if(!name){ alert('Please enter patient name'); return; }
-  let record = {
-    name,
+async function saveRecord() {
+  const nameOk = validateRequired('name', 'nameMsg', 'Patient name', true);
+  const diagOk = validateRequired('diagnosis', 'diagMsg', 'Diagnosis', true);
+  if (!nameOk || !diagOk) {
+    alert('Please fill in all required fields (Patient Name, Diagnosis).');
+    return;
+  }
+
+  const btn = document.getElementById('saveBtn');
+  btn.disabled = true; btn.textContent = 'Saving...';
+
+  const record = {
+    name: document.getElementById('name').value.trim(),
     age: document.getElementById('age').value,
     gender: document.getElementById('gender').value,
     date: document.getElementById('date').value,
@@ -126,17 +169,20 @@ function saveRecord(){
     dosage: document.getElementById('dosage').value,
     duration: document.getElementById('duration').value
   };
-  fetch('http://localhost:3000/add',{
-    method:'POST',
-    headers:{'Content-Type':'application/json'},
-    body:JSON.stringify(record)
-  })
-  .then(r=>r.json())
-  .then(()=>{
-    alert('Health record saved successfully ✓');
-    window.location.href='dashboard.html';
-  })
-  .catch(()=>alert('Server not reachable. Please ensure server is running.'));
+
+  try {
+    const res = await fetch('http://localhost:3000/add', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify(record)
+    });
+    await res.json();
+    alert('✅ Health record saved successfully!');
+    window.location.href = 'dashboard.html';
+  } catch {
+    alert('⚠ Server not reachable. Please ensure server is running (node server.js).');
+    btn.disabled = false; btn.textContent = 'Save Health Record';
+  }
 }
 </script>
 </body>

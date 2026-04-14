@@ -2,24 +2,16 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>My Health Records</title>
+<title>My Health Records – HealthVault</title>
 <link rel="stylesheet" href="style.css">
-<style>
-.filter-bar{
-display:flex;gap:12px;align-items:center;flex-wrap:wrap;
-margin-bottom:20px;
-}
-.search-wrap{flex:1;min-width:200px;position:relative;}
-.search-wrap input{padding-left:36px;}
-.search-icon{position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--gray-400);font-size:15px;pointer-events:none;}
-.empty{text-align:center;padding:60px 20px;color:var(--gray-400);}
-.empty-icon{font-size:48px;margin-bottom:12px;}
-</style>
 </head>
 <body>
 
 <div class="topbar">
-  <span class="topbar-logo">HealthVault</span>
+  <div class="topbar-logo">
+    <div class="topbar-logo-icon">💊</div>
+    HealthVault
+  </div>
   <div class="topbar-actions">
     <button class="btn btn-sm" onclick="window.location.href='add-record.html'">+ Add Record</button>
     <button class="btn btn-sm btn-outline" onclick="window.location.href='dashboard.html'">← Dashboard</button>
@@ -28,11 +20,13 @@ margin-bottom:20px;
 
 <div class="page">
   <div class="page-header">
-    <h2>Health Records</h2>
-    <p id="recordSummary">Loading records...</p>
+    <div>
+      <h2>Health Records</h2>
+      <p id="recordSummary">Loading your records...</p>
+    </div>
   </div>
 
-  <div class="filter-bar">
+  <div class="filter-bar fade-in">
     <div class="search-wrap">
       <span class="search-icon">🔍</span>
       <input class="input" id="searchInput" placeholder="Search by diagnosis, doctor, medicine..." oninput="filterRecords()" style="margin:0;">
@@ -41,9 +35,13 @@ margin-bottom:20px;
       <option value="newest">Newest first</option>
       <option value="oldest">Oldest first</option>
     </select>
+    <select class="input" id="filterGender" onchange="filterRecords()" style="width:auto;margin:0;">
+      <option value="">All genders</option>
+      <option>Male</option><option>Female</option><option>Other</option>
+    </select>
   </div>
 
-  <div id="records"></div>
+  <div id="records" class="fade-in-1"></div>
 </div>
 
 <script>
@@ -52,57 +50,73 @@ let role = localStorage.getItem('role');
 let loggedPatient = localStorage.getItem('loggedPatient');
 
 fetch('http://localhost:3000/records')
-  .then(r=>r.json())
-  .then(data=>{
-    allRecords = role==='patient' ? data.filter(r=>r.name===loggedPatient) : data;
+  .then(r => r.json())
+  .then(data => {
+    allRecords = role === 'patient' ? data.filter(r => r.name === loggedPatient) : data;
     filterRecords();
   })
-  .catch(()=>{
-    document.getElementById('records').innerHTML = '<div class="empty"><div class="empty-icon">⚠️</div><p>Could not connect to server. Ensure it is running on port 3000.</p></div>';
+  .catch(() => {
+    document.getElementById('records').innerHTML = `
+      <div class="empty">
+        <div class="empty-icon">⚠️</div>
+        <h3>Server Offline</h3>
+        <p>Could not connect to server. Make sure it is running on port 3000.</p>
+      </div>`;
   });
 
-function filterRecords(){
-  let q = document.getElementById('searchInput').value.toLowerCase();
-  let sort = document.getElementById('sortSelect').value;
-  let filtered = allRecords.filter(r=>{
-    let text = [r.diagnosis,r.doctor,r.medicine,r.symptoms,r.name].join(' ').toLowerCase();
-    return text.includes(q);
+function filterRecords() {
+  const q = document.getElementById('searchInput').value.toLowerCase();
+  const sort = document.getElementById('sortSelect').value;
+  const gender = document.getElementById('filterGender').value;
+
+  let filtered = allRecords.filter(r => {
+    const text = [r.diagnosis, r.doctor, r.medicine, r.symptoms, r.name].join(' ').toLowerCase();
+    const matchQ = text.includes(q);
+    const matchG = !gender || r.gender === gender;
+    return matchQ && matchG;
   });
-  if(sort==='newest') filtered = filtered.slice().reverse();
+  if (sort === 'newest') filtered = filtered.slice().reverse();
   renderRecords(filtered);
 }
 
-function renderRecords(list){
-  document.getElementById('recordSummary').textContent = list.length + ' record' + (list.length!==1?'s':'') + ' found';
-  if(list.length===0){
-    document.getElementById('records').innerHTML = `<div class="empty"><div class="empty-icon">📋</div><p>No records found.</p></div>`;
+function renderRecords(list) {
+  document.getElementById('recordSummary').textContent = list.length + ' record' + (list.length !== 1 ? 's' : '') + ' found';
+
+  if (list.length === 0) {
+    document.getElementById('records').innerHTML = `
+      <div class="empty">
+        <div class="empty-icon">📋</div>
+        <h3>No records found</h3>
+        <p>Try adjusting your search or <a href="add-record.html">add a new record</a>.</p>
+      </div>`;
     return;
   }
-  document.getElementById('records').innerHTML = list.map((r,i)=>`
+
+  document.getElementById('records').innerHTML = list.map(r => `
     <div class="record-card">
       <div class="record-header">
         <div>
           <div class="record-diagnosis">${r.diagnosis || 'Health Record'}</div>
-          <div class="record-date">📅 ${r.date || 'No date'}</div>
+          <div class="record-date">📅 ${r.date || 'No date'}${r.doctor ? ' · 👨‍⚕️ Dr. ' + r.doctor : ''}</div>
         </div>
-        ${r.medicine ? `<span class="badge badge-blue">💊 ${r.medicine}</span>` : ''}
+        <div style="display:flex;gap:6px;align-items:flex-start;flex-wrap:wrap;">
+          ${r.medicine ? `<span class="badge badge-green">💊 ${r.medicine}</span>` : ''}
+          ${r.gender ? `<span class="badge badge-blue">${r.gender}</span>` : ''}
+        </div>
       </div>
       <div class="record-meta">
         ${r.name ? `<div class="meta-item"><strong>Patient:</strong> ${r.name}</div>` : ''}
         ${r.age ? `<div class="meta-item"><strong>Age:</strong> ${r.age}</div>` : ''}
-        ${r.gender ? `<div class="meta-item"><strong>Gender:</strong> ${r.gender}</div>` : ''}
-        ${r.doctor ? `<div class="meta-item"><strong>Doctor:</strong> Dr. ${r.doctor}</div>` : ''}
         ${r.hospital ? `<div class="meta-item"><strong>Hospital:</strong> ${r.hospital}</div>` : ''}
       </div>
-      ${r.symptoms ? `<p style="font-size:14px;color:var(--gray-600);margin-bottom:6px;"><strong>Symptoms:</strong> ${r.symptoms}</p>` : ''}
-      ${r.prescription ? `<p style="font-size:14px;color:var(--gray-600);margin-bottom:6px;"><strong>Prescription:</strong> ${r.prescription}</p>` : ''}
-      ${(r.medicine||r.dosage||r.duration) ? `
-      <div style="display:flex;gap:10px;margin-top:8px;flex-wrap:wrap;">
-        ${r.medicine ? `<span class="badge badge-blue">💊 ${r.medicine}</span>` : ''}
-        ${r.dosage ? `<span class="badge badge-amber">Dosage: ${r.dosage}</span>` : ''}
-        ${r.duration ? `<span class="badge badge-green">Duration: ${r.duration}</span>` : ''}
+      ${r.symptoms ? `<p style="font-size:13.5px;color:var(--gray-600);margin-bottom:8px;"><strong>Symptoms:</strong> ${r.symptoms}</p>` : ''}
+      ${r.prescription ? `<p style="font-size:13.5px;color:var(--gray-600);margin-bottom:8px;"><strong>Prescription:</strong> ${r.prescription}</p>` : ''}
+      ${(r.medicine || r.dosage || r.duration) ? `
+      <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap;">
+        ${r.dosage ? `<span class="badge badge-amber">📏 Dosage: ${r.dosage}</span>` : ''}
+        ${r.duration ? `<span class="badge badge-accent">⏱ Duration: ${r.duration}</span>` : ''}
       </div>` : ''}
-      ${r.notes ? `<p class="text-sm" style="margin-top:8px;padding-top:8px;border-top:1px solid var(--gray-100);">📝 ${r.notes}</p>` : ''}
+      ${r.notes ? `<p style="font-size:13px;color:var(--gray-500);margin-top:10px;padding-top:10px;border-top:1px solid var(--gray-100);">📝 ${r.notes}</p>` : ''}
     </div>
   `).join('');
 }

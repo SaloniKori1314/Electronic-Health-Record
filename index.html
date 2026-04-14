@@ -2,28 +2,52 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>HealthVault</title>
+<title>HealthVault – Your Digital Health Record</title>
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
 <div class="container">
   <div class="left">
-    <h1>HealthVault</h1>
-    <p>Your Health Records, Securely Managed</p>
+    <h1>Health<em>Vault</em></h1>
+    <p>Your complete medical history, securely managed in one place.</p>
     <div class="features">
-      <div><span class="feat-icon">🔒</span> Bank-level security</div>
+      <div><span class="feat-icon">🔒</span> Bank-level data encryption</div>
       <div><span class="feat-icon">📱</span> Access anywhere, anytime</div>
-      <div><span class="feat-icon">📋</span> Complete medical history</div>
-      <div><span class="feat-icon">📊</span> Visual health insights</div>
+      <div><span class="feat-icon">📋</span> Complete medical timeline</div>
+      <div><span class="feat-icon">📊</span> Visual health analytics</div>
+      <div><span class="feat-icon">🌤️</span> Real-time health insights</div>
     </div>
+    <div class="left-badge">🔒 HIPAA-aligned security standards</div>
   </div>
   <div class="right">
-    <div class="form-box" style="text-align:center;">
-      <div class="form-title">Welcome</div>
-      <div class="form-sub" style="margin-bottom:32px;">Manage your health digitally and securely</div>
-      <button class="btn" onclick="window.location.href='login.html'" style="margin-bottom:12px;">Sign In</button>
-      <button class="btn btn-outline" onclick="window.location.href='register.html'">Create Account</button>
-      <p class="link" style="margin-top:24px;">Smart Digital Health Record System</p>
+    <div class="form-box fade-in">
+      <div class="form-eyebrow">Digital Health Platform</div>
+      <div class="form-title">Welcome to HealthVault</div>
+      <div class="form-sub">Manage your health records digitally and securely. Join thousands of patients and doctors already using HealthVault.</div>
+
+      <div style="display:flex;flex-direction:column;gap:12px;margin-top:8px;">
+        <button class="btn fade-in-1" onclick="window.location.href='login.html'">Sign In to Your Account</button>
+        <button class="btn btn-outline fade-in-2" onclick="window.location.href='register.html'">Create Free Account</button>
+      </div>
+
+      <div class="divider"></div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;text-align:center;" class="fade-in-3">
+        <div style="padding:14px 8px;background:var(--gray-50);border-radius:var(--radius-sm);border:var(--border);">
+          <div style="font-size:22px;font-weight:700;color:var(--primary);">100%</div>
+          <div style="font-size:11px;color:var(--gray-400);margin-top:3px;font-weight:500;">Secure</div>
+        </div>
+        <div style="padding:14px 8px;background:var(--gray-50);border-radius:var(--radius-sm);border:var(--border);">
+          <div style="font-size:22px;font-weight:700;color:var(--green);">Free</div>
+          <div style="font-size:11px;color:var(--gray-400);margin-top:3px;font-weight:500;">Always</div>
+        </div>
+        <div style="padding:14px 8px;background:var(--gray-50);border-radius:var(--radius-sm);border:var(--border);">
+          <div style="font-size:22px;font-weight:700;color:var(--accent);">24/7</div>
+          <div style="font-size:11px;color:var(--gray-400);margin-top:3px;font-weight:500;">Access</div>
+        </div>
+      </div>
+
+      <p class="link fade-in-4">Smart Digital Health Record System · v2.0</p>
     </div>
   </div>
 </div>
